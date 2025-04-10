@@ -7,8 +7,8 @@ const config = {
     OLLAMA_API_URL: process.env.OLLAMA_API_URL || 'http://localhost:11434',
 
     // --- Model Lists ---
-    AVAILABLE_OLLAMA_MODELS: [ 'mistral', 'llama3', 'gemma:7b', 'gemma:2b', 'llama3.2' ],
-    AVAILABLE_GEMINI_MODELS: [ 'gemini-1.5-flash', 'gemini-pro' ],
+    AVAILABLE_OLLAMA_MODELS: [  ],
+    AVAILABLE_GEMINI_MODELS: [ 'gemini-1.5-flash'],
 
     // --- File Paths & DB ---
     CUSTOMER_DATA_FILE: './data/customer_data_collection.csv', // Relative to project root
