@@ -48,8 +48,8 @@ async function initializeApp() {
         console.log("Routes mounted.");
 
         // Start listening
-        app.listen(PORT, () => {
-            console.log(`Server running on http://localhost:${PORT}`);
+        app.listen(PORT, '0.0.0.0', () => {   // Listen on 0.0.0.0
+            console.log(`Server listening on port ${PORT}`);
             console.log("Application initialized successfully.");
         });
 
