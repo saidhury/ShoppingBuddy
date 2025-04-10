@@ -1,0 +1,33 @@
+{
+    "name": "shopping-buddy",
+    "version": "1.0.0",
+    "description": "Personalised products recommendation engine using LLMs",
+    "main": "server.js",
+    "scripts": {
+        "start": "node server.js",
+        "dev": "nodemon server.js"
+    },
+    "keywords": [
+        "recommendation",
+        "express",
+        "nodejs",
+        "llm",
+        "gemini",
+        "ollama"
+    ],
+    "author": "saidul",
+    "license": "ISC",
+    "dependencies": {
+        "@google/generative-ai": "^0.14.1",
+        "axios": "^1.8.4",
+        "csv-parser": "^3.2.0",
+        "dotenv": "^16.4.7",
+        "ejs": "^3.1.10",
+        "express": "^4.21.2",
+        "ollama": "^0.5.14",
+        "sqlite3": "^5.1.7"
+    },
+    "devDependencies": {
+        "nodemon": "^3.1.4"
+    }
+}
