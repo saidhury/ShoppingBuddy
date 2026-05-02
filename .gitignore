@@ -1,9 +1,11 @@
-node_modules/
 .env
 *.log
 *.db
 *.db-journal
-serve.mjs
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
 
 .DS_Store
 Thumbs.db
