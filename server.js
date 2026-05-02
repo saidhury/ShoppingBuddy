@@ -49,7 +49,7 @@ async function initializeApp() {
 
         // Start listening
         app.listen(PORT, '0.0.0.0', () => {   // Listen on 0.0.0.0
-            console.log(`Server listening on port ${PORT}`);
+            console.log(`Server listening on port localhost:${PORT}`);
             console.log("Application initialized successfully.");
         });
 

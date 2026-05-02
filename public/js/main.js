@@ -62,6 +62,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const submitButton = document.getElementById('submit-button');
     const buttonIcon = document.getElementById('button-icon');
     const buttonText = document.getElementById('button-text');
+    const skeletonLoader = document.getElementById('skeleton-loader');
+    const profileSkeleton = document.getElementById('profile-skeleton');
+    const profileContainer = document.getElementById('profile-container');
+    const profilePlaceholder = document.getElementById('profile-placeholder');
+    const recommendationsContainer = document.getElementById('recommendations-container');
+    const debugSection = document.getElementById('debug-section');
+    const resultsWrapper = document.getElementById('results-wrapper');
 
     if (form && submitButton && buttonIcon && buttonText) {
         const originalIconHTML = '<i class="fas fa-magic mr-2"></i>';
@@ -87,21 +94,69 @@ document.addEventListener('DOMContentLoaded', () => {
             buttonIcon.innerHTML = loadingIconHTML;
             buttonText.textContent = loadingButtonText;
 
+            // Show skeleton, hide actual lists
+            if (profileSkeleton) profileSkeleton.classList.remove('hidden');
+            if (profileContainer) profileContainer.classList.add('hidden');
+            if (profilePlaceholder) profilePlaceholder.classList.add('hidden');
+
+            if (skeletonLoader) {
+                skeletonLoader.classList.remove('hidden');
+                // Auto scroll smoothly to results overarching grid so the profile skeleton is also visible
+                if (resultsWrapper) {
+                    const y = resultsWrapper.getBoundingClientRect().top + window.scrollY - 80;
+                    window.scrollTo({ top: y, behavior: 'smooth' });
+                } else {
+                    skeletonLoader.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }
+            if (recommendationsContainer) recommendationsContainer.classList.add('hidden');
+            if (debugSection) debugSection.classList.add('hidden');
+
             // The form will now submit and cause a page reload.
             // No explicit reset needed here because the reload handles it.
-            // If this were an AJAX form, you would add a .finally() or similar block
-            // to call a resetFormButton() function.
         });
-
-        // Optional: Handle initial page load state if needed
-        // This might be less critical now since the server handles the request/response cycle,
-        // but could be useful if there was a scenario where the page rendered mid-request.
-        // const isInitiallyLoading = ('<%= locals.customer_id && !locals.recommendations %>' === 'true'); // Can't use EJS here directly
-        // Instead, you might pass a flag via another script variable if needed.
-        // For now, we assume the page loads in a non-loading state unless the form is submitted.
-
     } else {
         console.warn("Form or button elements for loading state not found.");
+    }
+
+    // --- Quick Try Buttons Logic ---
+    const quickTryBtns = document.querySelectorAll('.quick-try-btn');
+    const customerIdInput = document.getElementById('customer_id');
+
+    quickTryBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            if (customerIdInput && form) {
+                const targetId = e.currentTarget.getAttribute('data-id');
+                customerIdInput.value = targetId;
+                
+                // Only submit if a model is selected (wait a tiny bit for the model to update if it hasn't)
+                setTimeout(() => {
+                   if(modelSelect && modelSelect.value !== "") {
+                       form.requestSubmit(); // Will trigger submit event handler
+                   } else {
+                       alert("Please ensure an LLM Service and Model are selected first.");
+                   }
+                }, 100);
+            }
+        });
+    });
+
+    // --- Debug Toggle Panel Logic ---
+    const debugToggleBtn = document.getElementById('debug-toggle-btn');
+    const debugPanel = document.getElementById('debug-panel');
+
+    if (debugToggleBtn && debugPanel) {
+        debugToggleBtn.addEventListener('click', () => {
+            debugPanel.classList.toggle('hidden');
+            const icon = debugToggleBtn.querySelector('i');
+            if (debugPanel.classList.contains('hidden')) {
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-code');
+            } else {
+                icon.classList.remove('fa-code');
+                icon.classList.add('fa-chevron-up');
+            }
+        });
     }
 
     // --- Simple Navbar Placeholder Content ---
@@ -114,16 +169,41 @@ document.addEventListener('DOMContentLoaded', () => {
                          <i class="fas fa-robot text-2xl text-indigo-600 mr-2"></i>
                          <span class="font-bold text-xl text-gray-800">ShoppingBuddy</span>
                     </div>
-                    <!-- Add Nav Links if needed -->
-                    <!-- <nav class="hidden md:block">
-                        <div class="ml-10 flex items-baseline space-x-4">
-                            <a href="#" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Link 1</a>
-                            <a href="#" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Link 2</a>
-                        </div>
-                    </nav> -->
+                    <nav class="flex items-center">
+                        <button type="button" id="open-about-modal" class="text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition flex items-center">
+                            <i class="fas fa-info-circle mr-1.5"></i> About the Project
+                        </button>
+                    </nav>
                 </div>
             </div>
         `;
+    }
+
+    // --- Modal Logic ---
+    const aboutModal = document.getElementById('about-modal');
+    const openAboutModalBtn = document.getElementById('open-about-modal');
+    const closeAboutModalBtns = document.querySelectorAll('.close-modal-btn');
+    
+    if (aboutModal && openAboutModalBtn) {
+        openAboutModalBtn.addEventListener('click', () => {
+            aboutModal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden'); // Prevent scrolling
+        });
+
+        closeAboutModalBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                aboutModal.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+            });
+        });
+
+        // Close on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !aboutModal.classList.contains('hidden')) {
+                aboutModal.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+            }
+        });
     }
 
     // --- Simple Subtitle Placeholder ---

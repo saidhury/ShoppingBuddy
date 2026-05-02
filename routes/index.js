@@ -9,6 +9,23 @@ const { selectCandidateProducts } = require('../agents/candidateSelector');
 const { getLlmRecommendations } = require('../agents/recommendationAgent');
 const { getDb } = require('../db/database'); // To get DB instance if not passed differently
 
+const getModelOptions = () => {
+    const opts = { 'gemini': config.AVAILABLE_GEMINI_MODELS };
+    if (config.ENABLE_OLLAMA) {
+        opts['ollama'] = config.AVAILABLE_OLLAMA_MODELS;
+    }
+    return opts;
+};
+
+// GET route for the health check endpoint
+router.get('/health', (req, res) => {
+    res.status(200).json({
+        status: 'UP',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime()
+    });
+});
+
 // GET route for the main page
 router.get('/', (req, res) => {
     // Access loaded data via app.locals set in server.js
@@ -23,12 +40,9 @@ router.get('/', (req, res) => {
         customer_id: "",
         profile_summary: null,
         recommendations: null,
-        model_options: { // Pass model options from config
-            'ollama': config.AVAILABLE_OLLAMA_MODELS,
-            'gemini': config.AVAILABLE_GEMINI_MODELS
-        },
+        model_options: getModelOptions(),
         selected_service: config.DEFAULT_LLM_SERVICE,
-        selected_model: config.DEFAULT_LLM_SERVICE === 'ollama' ? config.AVAILABLE_OLLAMA_MODELS[0] : config.AVAILABLE_GEMINI_MODELS[0]
+        selected_model: config.DEFAULT_LLM_SERVICE === 'ollama' && config.ENABLE_OLLAMA ? config.AVAILABLE_OLLAMA_MODELS[0] : config.AVAILABLE_GEMINI_MODELS[0]
     };
     res.render('index', templateData);
 });
@@ -51,6 +65,7 @@ router.post('/', async (req, res) => {
     let profile_summary = null;
     let recommendations_list = null;
     let flash_error = null; // Simulate flash messages for now
+    let debug_info = null; // Keep track of pipeline execution for UI
 
     // --- Input Validation ---
     if (!customer_id_submitted) {
@@ -63,8 +78,18 @@ router.post('/', async (req, res) => {
         // --- Orchestration ---
         try {
             console.log(`--- Request for Customer: ${customer_id_submitted}, Service: ${selected_service}, Model: ${selected_model} ---`);
+            
+            // Initialize debug object
+            debug_info = {
+                steps: ['✅ Received Request'],
+                prompt: ''
+            };
 
             profile_summary = await getCustomerProfile(customer_id_submitted, customerMap); // Pass map
+            
+            if (profile_summary && !profile_summary.startsWith("Error:")) {
+                debug_info.steps.push('✅ Fetched Customer Profile');
+            }
 
             if (profile_summary.startsWith("Error:")) {
                 flash_error = profile_summary;
@@ -75,22 +100,46 @@ router.post('/', async (req, res) => {
                 if (!candidate_products || candidate_products.length === 0) {
                     flash_error = "No suitable candidate products found based on profile filtering.";
                     recommendations_list = []; // Empty list
+                    debug_info.steps.push('❌ No candidate products found');
                 } else {
+                    debug_info.steps.push(`✅ DB filter: ${candidate_products.length} candidate products`);
+                    
+                    // Mock the prompt for recruiter portfolio view
+                    debug_info.prompt = `SYSTEM: You are an expert e-commerce assistant.
+--------------------------------------
+USER PROFILE: 
+${profile_summary}
+--------------------------------------
+CANDIDATE PRODUCTS (${candidate_products.length} items):
+${JSON.stringify(candidate_products.slice(0, 3))} ... [truncated]
+--------------------------------------
+TASK: Return the top recommended products encoded in JSON. Explain your reasoning in a 'why' field.`;
+
                     const llm_result = await getLlmRecommendations(
                         profile_summary,
                         candidate_products,
                         selected_service,
                         selected_model
                     );
+                    
+                    debug_info.steps.push(`✅ Queried LLM: ${selected_service.toUpperCase()} - ${selected_model}`);
 
                     if (typeof llm_result === 'object' && llm_result !== null && llm_result.error) {
                         flash_error = `LLM Error: ${llm_result.error}`;
-                        if(llm_result.raw_output) console.error("LLM Raw Output:", llm_result.raw_output); // Log raw output on error
+                        if(llm_result.raw_output) {
+                            console.error("LLM Raw Output:", llm_result.raw_output); // Log raw output on error
+                            debug_info.llm_output = llm_result.raw_output;
+                        }
                         recommendations_list = null;
                     } else if (!Array.isArray(llm_result)) {
                         flash_error = `Error: Unexpected result type from LLM: ${typeof llm_result}`;
                         recommendations_list = null;
                     } else {
+                        // Extract raw output safely
+                        if (llm_result._llm_raw_output) {
+                            debug_info.llm_output = llm_result._llm_raw_output;
+                            delete llm_result._llm_raw_output;
+                        }
                         // Success - Fetch details
                         recommendations_list = llm_result.map(rec => {
                             const prod_id = rec?.product_id;
@@ -130,10 +179,8 @@ router.post('/', async (req, res) => {
         customer_id: customer_id_submitted,
         profile_summary: profile_summary,
         recommendations: recommendations_list,
-        model_options: {
-            'ollama': config.AVAILABLE_OLLAMA_MODELS,
-            'gemini': config.AVAILABLE_GEMINI_MODELS
-        },
+        debug_info: debug_info,
+        model_options: getModelOptions(),
         selected_service: selected_service,
         selected_model: selected_model,
         flash_error: flash_error // Pass error message to template

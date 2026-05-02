@@ -3,13 +3,14 @@ dotenv.config(); // Load environment variables from .env file
 
 const config = {
     // --- Service Configuration ---
-    DEFAULT_LLM_SERVICE: process.env.LLM_SERVICE || 'ollama',
+    ENABLE_OLLAMA: process.env.ENABLE_OLLAMA === 'true', // Defaults to false
+    DEFAULT_LLM_SERVICE: process.env.LLM_SERVICE || (process.env.ENABLE_OLLAMA === 'true' ? 'ollama' : 'gemini'),
     GEMINI_API_KEY_ENV_VAR: 'GOOGLE_API_KEY',
     OLLAMA_API_URL: process.env.OLLAMA_API_URL || 'http://localhost:11434',
 
     // --- Model Lists ---
     AVAILABLE_OLLAMA_MODELS: [ ],
-    AVAILABLE_GEMINI_MODELS: [ 'gemini-1.5-flash' ],
+    AVAILABLE_GEMINI_MODELS: [ 'gemini-3.1-flash-lite-preview' ],
 
     // --- File Paths & DB ---
     CUSTOMER_DATA_FILE: './data/customer_data_collection.csv', // Relative to project root

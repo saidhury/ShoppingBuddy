@@ -152,6 +152,7 @@ Generate the JSON array now.
                 console.log("--- Successfully parsed JSON response ---");
                 console.log(`LLM Raw Output was:\n${llmOutputText}`);
 
+                parsedJson._llm_raw_output = llmOutputText; // Attach raw output to the array object
                 return parsedJson;
             } else {
                 console.error("Error: LLM response was valid JSON but not a list.");
