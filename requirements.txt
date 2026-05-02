@@ -52,7 +52,7 @@ google-ai-generativelanguage==0.6.6
     # via
     #   -r requirements.in
     #   google-generativeai
-google-api-core[grpc]==2.30.3
+google-api-core[grpc]>=2.30.0,<2.31.0
     # via
     #   -r requirements.in
     #   google-ai-generativelanguage
@@ -86,7 +86,7 @@ grpcio==1.80.0
     #   -r requirements.in
     #   google-api-core
     #   grpcio-status
-grpcio-status==1.62.3
+grpcio-status>=1.62.0,<2.0.0
     # via
     #   -r requirements.in
     #   google-api-core
